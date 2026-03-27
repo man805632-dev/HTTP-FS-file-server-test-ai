@@ -1,0 +1,42 @@
+name: Build and Release
+
+on:
+  workflow_dispatch: # Permite que você clique em um botão para gerar a release
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential g++
+
+      - name: Build with Make
+        run: make
+
+      - name: Check if binary exists
+        run: |
+          if [ ! -f ./http_fs ]; then
+            echo "Erro: Binário http_fs não foi gerado!"
+            exit 1
+          fi
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: http_fs
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          body: "Compilação automática do servidor HTTP-FS."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
